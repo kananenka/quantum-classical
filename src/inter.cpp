@@ -40,7 +40,10 @@ void force_c(Subsystem &QS, double *forces, double *vij, double* sigma,
 
   for(int i=0; i<natoms; ++i){
      for(int j=0; j<natoms; ++j){
-        if(i==j) continue;
+        /* tagged H atom acts on the rest of the system through
+           quantum Hellman--Feynman forces and, therefore, is
+           excluded here */
+        if(j == QS.indH) continue;
         tij = vij[i*natoms+j];
         /* check if two atoms interact via Coulomb
            forces (must belong to different molecules) */
