@@ -107,7 +107,7 @@ void Subsystem::energy(double *sigma, double *eps, double *vij,
      Vcoul = 0.0;
      for(int n=0; n<natoms; ++n){
         vt = vij[indH*natoms+n];
-        if(abs(vt) > 1e-6){
+        if(abs(vt) > 1e-7){
            rx = lhx - xyz[3*n];
            ry = lhy - xyz[3*n+1];
            rz = lhz - xyz[3*n+2];
