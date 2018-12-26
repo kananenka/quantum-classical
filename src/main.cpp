@@ -38,7 +38,7 @@ int main(int argc, char** argv){
  bool *inter;
 
  /* define other variables */
- double ek, ep, elj, ec, tempK;
+ double ek, elj, ec, tempK;
  int nconst;
 
  /* define constraints */
@@ -108,8 +108,8 @@ int main(int argc, char** argv){
  com_v(mass, vel, natoms);
 
  /* calculate temperature, kinetic and potential energy */
- energy(ek, ep, elj, ec, tempK, vel, xyz, mass, natoms, 
-        nconst, vij, sigma, eps, eps_r, box, lj_cut);
+ energy(ek, elj, ec, tempK, vel, xyz, mass, natoms, nconst, 
+        vij, sigma, eps, eps_r, box, lj_cut, QS);
 
  /* calculate properties of a quantum subsystem: energies and forces  */
  QS.eval(sigma, eps, vij, xyz, atoms_mol, nmols, natoms, 
@@ -121,6 +121,8 @@ int main(int argc, char** argv){
 
  std::cout << QS.e0 << " " << QS.e1 << " " << QS.w01 << " " << QS.anh 
            << " " << QS.qav0 << " " << QS.qav1 << std::endl;
+
+ std::cout << " Total energy = " << ek + elj + ec + QS.e0 << std::endl;
 
  /* After each integration step the coordinates
 of the particles must be examined. If a particle is found to have left
