@@ -10,12 +10,12 @@
 #include "energy.hpp"
 
 
-void energy(double &ek, double &ep, double &elj, 
-            double &ec, double &tempK, double* vel, 
+void energy(double &ek, double &elj, double &ec, 
+            double &tempK, double* vel, 
             double* xyz, double* mass, int natoms, 
             int Nconst, double* vij, double* sigma,
             double *eps, double eps_r, double* box,
-            double r_cut)
+            double r_cut, Subsystem &QS)
 {
 /*
 
@@ -26,21 +26,28 @@ void energy(double &ek, double &ep, double &elj,
 
 */
 
-   /* kinetic energy */
+   /* 
+      kinetic energy, sum over all untagged atoms
+      because for the tagged H atom kinetic energy
+      will be calculated quantum-mechanically
+   */
    ek = 0.0;
-
    for(int s=0; s<natoms; ++s)
-      ek += 0.5*mass[s]*(vel[3*s]*vel[3*s] + 
-                         vel[3*s+1]*vel[3*s+1] + 
-                         vel[3*s+2]*vel[3*s+2]);
+      if(s != QS.indH)
+         ek += 0.5*mass[s]*(vel[3*s]*vel[3*s] + 
+                            vel[3*s+1]*vel[3*s+1] + 
+                            vel[3*s+2]*vel[3*s+2]);
 
-   /* units for the kinetic energy above are: a.u.*A^2/ps^2 
-      we want to report this energy in kJ/mol */
+   /* 
+      units for the kinetic energy above are: a.u.*A^2/ps^2 
+      we want to report this energy in kJ/mol 
+   */
    ek *= KE_convert;
 
    std::cout << " Kinetic energy = " << ek << std::endl;
 
-   /* To calculate absolute temperature we use the following
+   /* 
+      To calculate absolute temperature we use the following
       formula: E_kin = (1/2) * N_{df} * K_B * T,
       where N_{df} is the number of degrees of freedom:
       N_{df} = 3*N - N_{constraints} - N_{com}
@@ -48,9 +55,14 @@ void energy(double &ek, double &ep, double &elj,
       system, N_{constraints} is the number of constraints,
       and N_{com} = 3 additional degrees of freedom must be 
       removed, because the three center-of-mass velocities are 
-      constants of the motion, which we set to zero */
+      constants of the motion, which we set to zero 
+   */
 
-   int Ndf = 3*natoms - Nconst - 3;
+   /* 
+     we add here 1 because one tagged H atom is allowed to
+     move 
+   */  
+   int Ndf = 3*natoms - Nconst - 3 + 1;
 
    tempK = 2.0*ek*1.0e3/(Na*Ndf*Kb);   
 
@@ -65,6 +77,7 @@ void energy(double &ek, double &ep, double &elj,
    ec  = 0.0;
 
    for(int i=0; i<natoms; ++i){
+      if( i== QS.indH) continue;
       for(int j=0; j<i; ++j){
          /* vij = 0 means the same molecule for which LJ is also zero */
          if(abs(vij[i*natoms+j]) > 0.0){
@@ -91,10 +104,6 @@ void energy(double &ek, double &ep, double &elj,
                    sr6_s  = sr4_s*sr2_s;
                    sr12_s = sr6_s*sr6_s;
                    r_s    = rij/r_cut; 
-                   //ljtemp = (sr12 - sr6) - (sr12_s - sr6_s); 
-                   //ljtemp = sr12 - sr6 
-                   //       + r_s*(6.0*sr12_s - 3.0*sr6_s) 
-                   //       - 7.0*sr12_s + 4.0*sr6_s;
                    ljtemp = sr12 - sr6 
                           - (rij - r_cut)*(6.0*sr6_s/r_cut - 12.0*sr12_s/r_cut)
                           - sr12_s + sr6_s;
