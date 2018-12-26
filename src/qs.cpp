@@ -7,17 +7,18 @@
 #include "qs.hpp"
 
 Subsystem::Subsystem(int ngrid, int tag_mol, int tag_atom,
-                     double r0, double dr, int atoms_mol):
+                     double r0, double dr, int atoms_mol, int natoms):
                      ngrid(ngrid), tag_mol(tag_mol), tag_atom(tag_atom),
                      r0(r0), dr(dr)
 {
      /* allocate arrays */
-     Es  = (double *)calloc(ngrid, sizeof(double));
-     Esb = (double *)calloc(ngrid, sizeof(double));
-     Ek  = (double *)calloc(ngrid*ngrid, sizeof(double));
-     Hqs = (double *)calloc(ngrid*ngrid, sizeof(double));
+     Es   = (double *)calloc(ngrid, sizeof(double));
+     Esb   = (double *)calloc(ngrid, sizeof(double));
+     Ek    = (double *)calloc(ngrid*ngrid, sizeof(double));
+     Hqs   = (double *)calloc(ngrid*ngrid, sizeof(double));
      evals = (double *)calloc(ngrid, sizeof(double));
      evecs = (double *)calloc(2*ngrid, sizeof(double));
+     Fqm   = (double *)calloc(3*natoms, sizeof(double));
 
      /* set indices for tagged atoms */
      indH = tag_mol*atoms_mol + tag_atom;
@@ -36,9 +37,10 @@ Subsystem::Subsystem(int ngrid, int tag_mol, int tag_atom,
      Efile = fopen("pes.txt", "w");
 }
 
-void Subsystem::energy(double *sigma, double *eps, double *vij, 
+void Subsystem::eval(double *sigma, double *eps, double *vij, 
                        double *xyz, int atoms_mol, int nmols, 
-                       int natoms, double *box, double eps_r)
+                       int natoms, double *box, double eps_r,
+                       int alpha)
 {
 /*
     Here we deal with the quantum subsystem. Use DVR basis to
@@ -49,8 +51,7 @@ void Subsystem::energy(double *sigma, double *eps, double *vij,
 
     - Two lowest eigenvalues
     - Expectation value <Psi|q|Psi>
-    - Hellmann-Feynman forces, for each of the two
-      lowest eigenstates
+    - Hellmann-Feynman forces, for a given eigenstate 0 or 1
 
     December 2018
 
@@ -163,6 +164,40 @@ void Subsystem::energy(double *sigma, double *eps, double *vij,
 
   /* Write energy components into a file, move this into initialization as well */
   writeEn();
+
+  /* Calculate Helmann--Feynman forces */
+  for(int s=0; s<(3*natoms); ++s)
+      Fqm[s] = 0.0;
+
+  double tij, urx, ury, urz;
+
+  for(int i=0; i<natoms; ++i){ 
+     if(i == indH) continue;
+     tij = vij[indH*natoms+i];
+     if(abs(tij) > 1.0e-7){
+        for(int n=0; n<ngrid; ++n){
+           ri = r0 + dr*n;
+           lhx = xyz[cindO]   + ri*dOHx;
+           lhy = xyz[cindO+1] + ri*dOHy;
+           lhz = xyz[cindO+2] + ri*dOHz;
+           rx  = xyz[3*i]   - lhx;
+           ry  = xyz[3*i+1] - lhy;
+           rz  = xyz[3*i+2] - lhz;
+           rx = minImage(rx, box[0]);
+           ry = minImage(ry, box[1]);
+           rz = minImage(rz, box[2]);
+           rij = sqrt(rx*rx + ry*ry + rz*rz);
+           /* unit vector in tag H - X atom direction */
+           urx = rx/rij;
+           ury = ry/rij;
+           urz = rz/rij;
+           /* integrate on a grid to get Hellman--Feynman forces for each classical particle */
+           Fqm[3*i]   += dr*evecs[alpha*ngrid+n]*evecs[alpha*ngrid+n]*tij*urx/(eps_r*rij*rij);
+           Fqm[3*i+1] += dr*evecs[alpha*ngrid+n]*evecs[alpha*ngrid+n]*tij*ury/(eps_r*rij*rij);
+           Fqm[3*i+2] += dr*evecs[alpha*ngrid+n]*evecs[alpha*ngrid+n]*tij*urz/(eps_r*rij*rij);
+        }
+     }
+  }
 
   return;
 }
