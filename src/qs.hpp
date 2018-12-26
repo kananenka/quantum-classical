@@ -33,10 +33,11 @@ public:
   double drb, mass;
   double w01, w12, anh;
 
-  double *Es, *Esb, *Ek, *Hqs, *evals, *evecs;
+  double *Es, *Esb, *Ek, *Hqs, *evals, *evecs, *Fqm;
 
   Subsystem(int Ngrid, int tag_mol, int tag_atom,
-            double r0, double dr, int atoms_mol);
+            double r0, double dr, int atoms_mol, 
+            int natoms);
 
   ~Subsystem(){
      free (Ek);
@@ -45,11 +46,12 @@ public:
      free (Hqs);
      free (evals);
      free (evecs);
+     free (Fqm);
      fclose (Efile);
   };
 
-  void energy(double *, double*, double*, double*,
-              int ,int ,int ,double *, double);
+  void eval(double *, double*, double*, double*,
+            int ,int ,int ,double *, double, int);
 
   void kinetic();
 
