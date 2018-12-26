@@ -22,6 +22,6 @@ double q_potential(double r, double req)
    Return value of energy in kJ/mol !
 
 */
-   double v = De*(1.0 - exp(-A*(r - rOH)))*(1.0 - exp(-A*(r - rOH)));
+   double v = De*pow((1.0 - exp(-A*(r - rOH))),2.0); 
    return v;
 }
