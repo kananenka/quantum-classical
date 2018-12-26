@@ -114,6 +114,15 @@ int main(int argc, char** argv){
 
  std::cout << QS.e0 << " " << QS.e1 << " " << QS.w01 << " " << QS.anh << " " << QS.qav0 << " " << QS.qav1 << std::endl;
 
+ /* After each integration step the coordinates
+of the particles must be examined. If a particle is found to have left
+the simulation region, its coordinates must be readjusted to bring it back
+inside, which is equivalent to bring in an image particle through the opposite
+boundary. Supposing that the simulation region is a rectangular box, this is
+done by adding to or subtracting from the affected particle coordinate the
+size L of the box along the corresponding direction. May be call it from
+verlet/leapfrog propagation routine*/
+
  /* close files */
  fclose (ET_File);
 
