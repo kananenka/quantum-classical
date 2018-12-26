@@ -61,6 +61,7 @@ int main(int argc, char** argv){
  double r0 = 0.6572;    // OH shortest distance in A
  double dr = 0.02;      // grid step size
  int Ngrid   = 56;
+ int alpha = 0;         // active quantum state
 
  /* 
     end of temporary input 
@@ -69,7 +70,7 @@ int main(int argc, char** argv){
  int natoms = nmols*atoms_mol;
 
  /* define quantum subsystem */
- Subsystem QS(Ngrid, tag_mol, tag_atom, r0, dr, atoms_mol);
+ Subsystem QS(Ngrid, tag_mol, tag_atom, r0, dr, atoms_mol, natoms);
 
  /* allocate arrays */
  cang    = (const_angles *)calloc(1,sizeof(const_angles));
@@ -110,9 +111,9 @@ int main(int argc, char** argv){
  energy(ek, ep, elj, ec, tempK, vel, xyz, mass, natoms, 
         nconst, vij, sigma, eps, eps_r, box, lj_cut);
 
- /* calculate properties of a quantum subsystem */
- QS.energy(sigma, eps, vij, xyz, atoms_mol, nmols,
-           natoms, box, eps_r);
+ /* calculate properties of a quantum subsystem: energies and forces  */
+ QS.eval(sigma, eps, vij, xyz, atoms_mol, nmols,
+           natoms, box, eps_r, alpha);
 
  /* calculate classical forces */
  force_c(forces, vij, sigma, eps, xyz, eps_r, box, 
