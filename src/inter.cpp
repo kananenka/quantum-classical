@@ -13,9 +13,9 @@
 
 */
 
-void force_c(double *forces, double *vij, double* sigma, double* eps,
-             double *xyz, double eps_r, double *box, double r_cut, 
-             int natoms)
+void force_c(Subsystem &QS, double *forces, double *vij, double* sigma, 
+             double* eps, double *xyz, double eps_r, double *box, 
+             double r_cut, int natoms)
 {
 /*
     Calculate classical forces: Coulomb and Lennard-Jones
@@ -84,16 +84,18 @@ void force_c(double *forces, double *vij, double* sigma, double* eps,
 
   /* write forces to external file */
   FILE *ffile = fopen("Force.txt","w");
-  fprintf(ffile,"# Fc_x \t Fc_y \t Fc_z \t Flj_x \t Flj_y \t Flj_z \n");
+  fprintf(ffile,"# Fq_x \t Fq_y \t Fq_z \t Fc_x \t Fc_y \t Fc_z \t Flj_x \t Flj_y \t Flj_z \n");
   for(int n=0; n<natoms; ++n)
-     fprintf(ffile, " %f %f %f %f %f %f \n",Fc[3*n], Fc[3*n+1], Fc[3*n+2], 
-              Flj[3*n], Flj[3*n+1], Flj[3*n+2]);
+     fprintf(ffile, " %7.5f %7.5f %7.5f %7.5f %7.5f %7.5f %7.5f %7.5f %7.5f \n",
+             QS.Fqm[3*n], QS.Fqm[3*n+1], QS.Fqm[3*n+2], 
+             Fc[3*n], Fc[3*n+1], Fc[3*n+2], 
+             Flj[3*n], Flj[3*n+1], Flj[3*n+2]);
   fclose(ffile);
-  std::cout << " Forces are saved to: Force.txt " << std::endl;
+  std::cout << " All forces are saved to: Force.txt " << std::endl;
 
   /* add Coulomb and LJ forces together */
   for(int s=0; s<(3*natoms); ++s)
-     forces[s] = Fc[s] + Flj[s];
+     forces[s] = QS.Fqm[s] + Fc[s] + Flj[s];
 
   free (Fc);
   free (Flj);
