@@ -92,9 +92,12 @@ void energy(double &ek, double &ep, double &elj,
                    sr12_s = sr6_s*sr6_s;
                    r_s    = rij/r_cut; 
                    //ljtemp = (sr12 - sr6) - (sr12_s - sr6_s); 
+                   //ljtemp = sr12 - sr6 
+                   //       + r_s*(6.0*sr12_s - 3.0*sr6_s) 
+                   //       - 7.0*sr12_s + 4.0*sr6_s;
                    ljtemp = sr12 - sr6 
-                          + r_s*(6.0*sr12_s - 3.0*sr6_s) 
-                          - 7.0*sr12_s + 4.0*sr6_s;
+                          - (rij - r_cut)*(6.0*sr6_s/r_cut - 12.0*sr12_s/r_cut)
+                          - sr12_s + sr6_s;
                    elj   += 4.0*eps[i*natoms+j]*ljtemp;
                }
             }
