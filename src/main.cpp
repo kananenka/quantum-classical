@@ -112,14 +112,15 @@ int main(int argc, char** argv){
         nconst, vij, sigma, eps, eps_r, box, lj_cut);
 
  /* calculate properties of a quantum subsystem: energies and forces  */
- QS.eval(sigma, eps, vij, xyz, atoms_mol, nmols,
-           natoms, box, eps_r, alpha);
+ QS.eval(sigma, eps, vij, xyz, atoms_mol, nmols, natoms, 
+         box, eps_r, alpha);
 
- /* calculate classical forces */
- force_c(forces, vij, sigma, eps, xyz, eps_r, box, 
+ /* add classical forces to quantum forces evaluated above */
+ force_c(QS, forces, vij, sigma, eps, xyz, eps_r, box, 
          lj_cut, natoms);
 
- std::cout << QS.e0 << " " << QS.e1 << " " << QS.w01 << " " << QS.anh << " " << QS.qav0 << " " << QS.qav1 << std::endl;
+ std::cout << QS.e0 << " " << QS.e1 << " " << QS.w01 << " " << QS.anh 
+           << " " << QS.qav0 << " " << QS.qav1 << std::endl;
 
  /* After each integration step the coordinates
 of the particles must be examined. If a particle is found to have left
@@ -134,16 +135,16 @@ verlet/leapfrog propagation routine*/
  fclose (ET_File);
 
  /* free up memory */
+ free (cang); free (cbond);
  free (xyz); 
- free (box);
  free (vel);
+ free (box);
  free (charges);
  free (mass);
  free (sigma);
  free (eps);
  free (vij);
  free (inter);
- free (cang); free (cbond);
  free (forces);
 
  return 0;
