@@ -34,6 +34,7 @@ int main(int argc, char** argv){
  /* define arrays */
  double *xyz, *box, *vel;
  double *charges, *mass, *sigma, *eps, *vij;
+ double *forces;
  bool *inter;
 
  /* define other variables */
@@ -82,6 +83,7 @@ int main(int argc, char** argv){
  eps     = (double *)calloc(natoms*natoms, sizeof(double));
  vij     = (double *)calloc(natoms*natoms, sizeof(double));
  inter   = (bool *)calloc(natoms*natoms, sizeof(double));
+ forces  = (double *)calloc(3*natoms, sizeof(double));
 
  /* Open files to write some runtime info */
  ET_File = fopen("ET.out","w"); 
@@ -112,6 +114,10 @@ int main(int argc, char** argv){
  QS.energy(sigma, eps, vij, xyz, atoms_mol, nmols,
            natoms, box, eps_r);
 
+ /* calculate classical forces */
+ force_c(forces, vij, sigma, eps, xyz, eps_r, box, 
+         lj_cut, natoms);
+
  std::cout << QS.e0 << " " << QS.e1 << " " << QS.w01 << " " << QS.anh << " " << QS.qav0 << " " << QS.qav1 << std::endl;
 
  /* After each integration step the coordinates
@@ -137,6 +143,7 @@ verlet/leapfrog propagation routine*/
  free (vij);
  free (inter);
  free (cang); free (cbond);
+ free (forces);
 
  return 0;
 }
