@@ -2,9 +2,10 @@
 #include "pes.hpp"
 
 /*
-    Use this file to define potential energy surface 
-    and forces of a quantum subsystem.
-    Please use kJ/mol units for the output energies.
+    Use this file to define the potential energy surface
+    of and force of a quantum subsystem.
+
+    Units: kJ/mol for energies, kJ/(mol*A) for forces 
 
     December 2018
 */
@@ -18,7 +19,7 @@ double q_potential(double r, double req)
 {
 /*
    Define potential energy here. 
-   Returning value of energy must be in kJ/mol !
+   Return value of energy in kJ/mol !
 
 */
    double v = De*(1.0 - exp(-A*(r - rOH)))*(1.0 - exp(-A*(r - rOH)));
