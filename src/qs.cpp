@@ -154,7 +154,7 @@ void Subsystem::eval(double *sigma, double *eps, double *vij,
      qav1 += (r0 + dr*n)*evecs[ngrid+n]*evecs[ngrid+n];
   }
 
-  /* set up energies converting to kJ/mol and wave numbers when necessary */
+  /* set up energies converting to kJ/mol and wave numbers where necessary */
   e0  = evals[0]*kJmH;
   e1  = evals[1]*kJmH;
   w01 = (evals[1] - evals[0])*Htocmi;
@@ -191,7 +191,8 @@ void Subsystem::eval(double *sigma, double *eps, double *vij,
            urx = rx/rij;
            ury = ry/rij;
            urz = rz/rij;
-           /* integrate on a grid to get Hellman--Feynman forces for each classical particle */
+           /* integrate on a grid to get Hellman--Feynman forces for each classical particle 
+              units here are: kJ/mol for the energy and Angstrom for the distance */
            Fqm[3*i]   += dr*evecs[alpha*ngrid+n]*evecs[alpha*ngrid+n]*tij*urx/(eps_r*rij*rij);
            Fqm[3*i+1] += dr*evecs[alpha*ngrid+n]*evecs[alpha*ngrid+n]*tij*ury/(eps_r*rij*rij);
            Fqm[3*i+2] += dr*evecs[alpha*ngrid+n]*evecs[alpha*ngrid+n]*tij*urz/(eps_r*rij*rij);
