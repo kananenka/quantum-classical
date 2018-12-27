@@ -6,7 +6,7 @@ OBJECTS=main.o read_write.o move.o inter.o util.o energy.o pes.o qs.o
 
 run: $(OBJECTS)
 	$(COMP) -o run $(INCLUDES) $(LIBS) $(OBJECTS) $(FFLAGS)
-	mv run ../bin
+	cp run ../bin
 
 main.o: main.cpp 
 	$(COMP) -c main.cpp 
