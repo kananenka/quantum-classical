@@ -210,8 +210,7 @@ void Subsystem::eval(double *sigma, double *eps, double *vij,
      }
   }
 
-  /* calculate Force on the tagged atom. Helmann--Feynman force 
-     is the only force on the tagged atom */
+  /* calculate Force on the tagged atom. ? */
   for(int i=0; i<natoms; ++i){
      tij = vij[indH*natoms+i];
      if(abs(tij) > 1.0e-7){
@@ -229,7 +228,7 @@ void Subsystem::eval(double *sigma, double *eps, double *vij,
            ry = minImage(ry, box[1]);
            rz = minImage(rz, box[2]);
            rij = sqrt(rx*rx + ry*ry + rz*rz);
-           /* unit vector in tagged H-i atom direction */
+          /* unit vector in tagged H-i atom direction */
            urx = rx/rij;
            ury = ry/rij;
            urz = rz/rij;
