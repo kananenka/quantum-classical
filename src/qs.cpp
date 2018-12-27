@@ -176,30 +176,35 @@ void Subsystem::eval(double *sigma, double *eps, double *vij,
   double tij, urx, ury, urz;
 
   for(int i=0; i<natoms; ++i){ 
-     if(i == indH) continue;
-     tij = vij[indH*natoms+i];
-     if(abs(tij) > 1.0e-7){
-        for(int n=0; n<ngrid; ++n){
-           ri = r0 + dr*n;
-           lhx = xyz[cindO]   + ri*dOHx;
-           lhy = xyz[cindO+1] + ri*dOHy;
-           lhz = xyz[cindO+2] + ri*dOHz;
-           rx  = xyz[3*i]   - lhx;
-           ry  = xyz[3*i+1] - lhy;
-           rz  = xyz[3*i+2] - lhz;
-           rx = minImage(rx, box[0]);
-           ry = minImage(ry, box[1]);
-           rz = minImage(rz, box[2]);
-           rij = sqrt(rx*rx + ry*ry + rz*rz);
-           /* unit vector in tag H - X atom direction */
-           urx = rx/rij;
-           ury = ry/rij;
-           urz = rz/rij;
-           /* integrate on a grid to get Hellman--Feynman forces for each classical particle 
-              units here are: kJ/mol for the energy and Angstrom for the distance */
-           Fqm[3*i]   += dr*evecs[alpha*ngrid+n]*evecs[alpha*ngrid+n]*tij*urx/(eps_r*rij*rij);
-           Fqm[3*i+1] += dr*evecs[alpha*ngrid+n]*evecs[alpha*ngrid+n]*tij*ury/(eps_r*rij*rij);
-           Fqm[3*i+2] += dr*evecs[alpha*ngrid+n]*evecs[alpha*ngrid+n]*tij*urz/(eps_r*rij*rij);
+     if(i != indH){
+        /* Hellmann--Feynmann force on bath atom i
+           due to quantum subsystem */
+        tij = vij[indH*natoms+i];
+        if(abs(tij) > 1.0e-7){
+           for(int n=0; n<ngrid; ++n){
+              ri = r0 + dr*n;
+              /* location of H atom for a given grid point */
+              lhx = xyz[cindO]   + ri*dOHx;
+              lhy = xyz[cindO+1] + ri*dOHy;
+              lhz = xyz[cindO+2] + ri*dOHz;
+              /* distance between bath atom i and tagged atom H */
+              rx  = xyz[3*i]   - lhx;
+              ry  = xyz[3*i+1] - lhy;
+              rz  = xyz[3*i+2] - lhz;
+              rx = minImage(rx, box[0]);
+              ry = minImage(ry, box[1]);
+              rz = minImage(rz, box[2]);
+              rij = sqrt(rx*rx + ry*ry + rz*rz);
+              /* unit vector in tagged H-i atom direction */
+              urx = rx/rij;
+              ury = ry/rij;
+              urz = rz/rij;
+              /* integrate on a grid to get Hellman--Feynman forces 
+                 units here are: kJ/mol for the energy and Angstrom for the distance */
+              Fqm[3*i]   += dr*evecs[alpha*ngrid+n]*evecs[alpha*ngrid+n]*tij*urx/(eps_r*rij*rij);
+              Fqm[3*i+1] += dr*evecs[alpha*ngrid+n]*evecs[alpha*ngrid+n]*tij*ury/(eps_r*rij*rij);
+              Fqm[3*i+2] += dr*evecs[alpha*ngrid+n]*evecs[alpha*ngrid+n]*tij*urz/(eps_r*rij*rij);
+           }
         }
      }
   }
