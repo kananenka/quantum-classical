@@ -46,11 +46,11 @@ void Subsystem::eval(double *sigma, double *eps, double *vij,
     Here we deal with the quantum subsystem. Use DVR basis to
     construct the Hamiltonian
     
-    Return:
-    -------
+    Calculate:
+    ----------
 
-    - Two lowest eigenvalues
-    - Expectation value <Psi|q|Psi>
+    - Two lowest eigenvalues and corresponding eigenvectors
+    - Expectation value <Psi|q|Psi> for two lowest eigenstates
     - Hellmann-Feynman forces, for a given eigenstate 0 or 1
 
     December 2018
@@ -107,6 +107,10 @@ void Subsystem::eval(double *sigma, double *eps, double *vij,
      lhz = xyz[cindO+2] + ri*dOHz;
      Vcoul = 0.0;
      for(int n=0; n<natoms; ++n){
+        /* 
+           the tagged atom does not interact with itself
+           because vij was set to 0 earlier
+        */
         vt = vij[indH*natoms+n];
         if(abs(vt) > 1e-7){
            rx = lhx - xyz[3*n];
