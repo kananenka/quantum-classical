@@ -78,42 +78,44 @@ void energy(double &ek, double &elj, double &ec,
 
    for(int i=0; i<natoms; ++i){
       for(int j=0; j<i; ++j){
-         /* exclude interactions with tagged H atom */
-         if( i != QS.indH && j != QS.indH){
-            tij = vij[i*natoms+j];
-            /* vij = 0 means the same molecule for which LJ is also zero */
-            if(abs(tij) > 0.0){
-               rx = xyz[3*i]   - xyz[3*j];
-               ry = xyz[3*i+1] - xyz[3*j+1];
-               rz = xyz[3*i+2] - xyz[3*j+2];
-               rx = minImage(rx, box[0]);
-               ry = minImage(ry, box[1]);
-               rz = minImage(rz, box[2]);
-               rij = sqrt(rx*rx + ry*ry + rz*rz);
-               /* Coulomb */
-               ec += tij/(eps_r*rij);
-               if(rij <= r_cut){
-                  /* 
-                     Lennard-Jones truncated and shifted such that 
-                     both potential and the corresponding force
-                     vanish at cut-off
-                  */
-                  if(abs(eps[i*natoms+j]) > 0.0){
-                     sr     = sigma[i*natoms+j]/rij;
-                     sr2    = sr*sr;
-                     sr4    = sr2*sr2;
-                     sr6    = sr4*sr2;
-                     sr12   = sr6*sr6;
-                     sr_s   = sigma[i*natoms+j]/r_cut;
-                     sr2_s  = sr_s*sr_s;
-                     sr4_s  = sr2_s*sr2_s;
-                     sr6_s  = sr4_s*sr2_s;
-                     sr12_s = sr6_s*sr6_s;
-                     r_s    = rij/r_cut; 
-                     ljtemp = sr12 - sr6 
-                            - (rij - r_cut)*(6.0*sr6_s/r_cut - 12.0*sr12_s/r_cut)
-                            - sr12_s + sr6_s;
-                     elj   += 4.0*eps[i*natoms+j]*ljtemp;
+         /* exclude interactions with the tagged H atom */
+         if( i != QS.indH ){
+            if( j != QS.indH ){
+               tij = vij[i*natoms+j];
+               /* vij = 0 means the same molecule for which LJ is also zero */
+               if(abs(tij) > 0.0){
+                  rx = xyz[3*i]   - xyz[3*j];
+                  ry = xyz[3*i+1] - xyz[3*j+1];
+                  rz = xyz[3*i+2] - xyz[3*j+2];
+                  rx = minImage(rx, box[0]);
+                  ry = minImage(ry, box[1]);
+                  rz = minImage(rz, box[2]);
+                  rij = sqrt(rx*rx + ry*ry + rz*rz);
+                  /* Coulomb */
+                  ec += tij/(eps_r*rij);
+                  if(rij <= r_cut){
+                     /* 
+                        Lennard-Jones truncated and shifted such that 
+                        both potential and the corresponding force
+                        vanish at cut-off
+                     */
+                     if(abs(eps[i*natoms+j]) > 0.0){
+                        sr     = sigma[i*natoms+j]/rij;
+                        sr2    = sr*sr;
+                        sr4    = sr2*sr2;
+                        sr6    = sr4*sr2;
+                        sr12   = sr6*sr6;
+                        sr_s   = sigma[i*natoms+j]/r_cut;
+                        sr2_s  = sr_s*sr_s;
+                        sr4_s  = sr2_s*sr2_s;
+                        sr6_s  = sr4_s*sr2_s;
+                        sr12_s = sr6_s*sr6_s;
+                        r_s    = rij/r_cut; 
+                        ljtemp = sr12 - sr6 
+                               - (rij - r_cut)*(6.0*sr6_s/r_cut - 12.0*sr12_s/r_cut)
+                               - sr12_s + sr6_s;
+                        elj   += 4.0*eps[i*natoms+j]*ljtemp;
+                     }
                   }
                }
             }
