@@ -42,44 +42,49 @@ void force_c(Subsystem &QS, double *forces, double *vij, double* sigma,
      for(int j=0; j<natoms; ++j){
         /* tagged H atom acts on the rest of the system through
            quantum Hellman--Feynman forces and, therefore, is
-           excluded here */
-        if(j != QS.indH){
-           tij = vij[i*natoms+j];
-           /* check if two atoms interact via Coulomb
-              forces (must belong to different molecules) */
-           if(abs(tij) > 1.0e-7){
-              rx = xyz[3*i]   - xyz[3*j];
-              ry = xyz[3*i+1] - xyz[3*j+1];
-              rz = xyz[3*i+2] - xyz[3*j+2];
-              rx = minImage(rx, box[0]);
-              ry = minImage(ry, box[1]);
-              rz = minImage(rz, box[2]);
-              rij = sqrt(rx*rx + ry*ry + rz*rz);
-              /* unit vector in ij direction */
-              urx = rx/rij;
-              ury = ry/rij;
-              urz = rz/rij;
-              Fc[3*i]   = tij*urx/(eps_r*rij*rij);
-              Fc[3*i+1] = tij*ury/(eps_r*rij*rij);
-              Fc[3*i+2] = tij*urz/(eps_r*rij*rij);
-              /* add Lennard-Jones forces */
-              elj = eps[i*natoms+j];
-              if(abs(elj) > 1.0e-7){
-                 sr     = sigma[i*natoms+j]/rij;
-                 sr2    = sr*sr;
-                 sr4    = sr2*sr2;
-                 sr6    = sr4*sr2;
-                 sr12   = sr6*sr6;
-                 sr_s   = sigma[i*natoms+j]/r_cut;
-                 sr2_s  = sr_s*sr_s;
-                 sr4_s  = sr2_s*sr2_s;
-                 sr6_s  = sr4_s*sr2_s;
-                 sr12_s = sr6_s*sr6_s;
-                 ljtemp = 12.0*sr12/rij - 6.0*sr6/rij
-                        - 12.0*sr12_s/r_cut + 6.0*sr6_s/r_cut;
-                 Flj[3*i]   = 4.0*elj*ljtemp*urx/rij;
-                 Flj[3*i+1] = 4.0*elj*ljtemp*ury/rij;
-                 Flj[3*i+2] = 4.0*elj*ljtemp*urz/rij;
+           excluded here.
+           Force on each classical DOF by other classical DOFs 
+        */
+        if(j != QS.indH ){
+           if( i != QS.indH ){
+              tij = vij[i*natoms+j];
+              /* check if two atoms interact via Coulomb
+                 forces (must belong to different molecules) 
+              */
+              if(abs(tij) > 1.0e-7){
+                 rx = xyz[3*i]   - xyz[3*j];
+                 ry = xyz[3*i+1] - xyz[3*j+1];
+                 rz = xyz[3*i+2] - xyz[3*j+2];
+                 rx = minImage(rx, box[0]);
+                 ry = minImage(ry, box[1]);
+                 rz = minImage(rz, box[2]);
+                 rij = sqrt(rx*rx + ry*ry + rz*rz);
+                 /* unit vector in ij direction */
+                 urx = rx/rij;
+                 ury = ry/rij;
+                 urz = rz/rij;
+                 Fc[3*i]   = tij*urx/(eps_r*rij*rij);
+                 Fc[3*i+1] = tij*ury/(eps_r*rij*rij);
+                 Fc[3*i+2] = tij*urz/(eps_r*rij*rij);
+                 /* add Lennard-Jones forces */
+                 elj = eps[i*natoms+j];
+                 if(abs(elj) > 1.0e-7){
+                    sr     = sigma[i*natoms+j]/rij;
+                    sr2    = sr*sr;
+                    sr4    = sr2*sr2;
+                    sr6    = sr4*sr2;
+                    sr12   = sr6*sr6;
+                    sr_s   = sigma[i*natoms+j]/r_cut;
+                    sr2_s  = sr_s*sr_s;
+                    sr4_s  = sr2_s*sr2_s;
+                    sr6_s  = sr4_s*sr2_s;
+                    sr12_s = sr6_s*sr6_s;
+                    ljtemp = 12.0*sr12/rij - 6.0*sr6/rij
+                           - 12.0*sr12_s/r_cut + 6.0*sr6_s/r_cut;
+                    Flj[3*i]   = 4.0*elj*ljtemp*urx/rij;
+                    Flj[3*i+1] = 4.0*elj*ljtemp*ury/rij;
+                    Flj[3*i+2] = 4.0*elj*ljtemp*urz/rij;
+                 }
               }
            }
         }
