@@ -109,7 +109,8 @@ void Subsystem::eval(double *sigma, double *eps, double *vij,
      for(int n=0; n<natoms; ++n){
         /* 
            the tagged atom does not interact with itself
-           because vij was set to 0 earlier
+           because vij was set to 0 earlier, but it does
+           interact with other atoms via Coulomb interaction
         */
         vt = vij[indH*natoms+n];
         if(abs(vt) > 1e-7){
@@ -205,6 +206,38 @@ void Subsystem::eval(double *sigma, double *eps, double *vij,
               Fqm[3*i+1] += dr*evecs[alpha*ngrid+n]*evecs[alpha*ngrid+n]*tij*ury/(eps_r*rij*rij);
               Fqm[3*i+2] += dr*evecs[alpha*ngrid+n]*evecs[alpha*ngrid+n]*tij*urz/(eps_r*rij*rij);
            }
+        }
+     }
+  }
+
+  /* calculate Force on the tagged atom. Helmann--Feynman force 
+     is the only force on the tagged atom */
+  for(int i=0; i<natoms; ++i){
+     tij = vij[indH*natoms+i];
+     if(abs(tij) > 1.0e-7){
+        for(int n=0; n<ngrid; ++n){
+           ri = r0 + dr*n;
+           /* location of H atom for a given grid point */
+           lhx = xyz[cindO]   + ri*dOHx;
+           lhy = xyz[cindO+1] + ri*dOHy;
+           lhz = xyz[cindO+2] + ri*dOHz;
+           /* distance between bath atom i and tagged atom H */
+           rx  = lhx - xyz[3*i];
+           ry  = lhy - xyz[3*i+1];
+           rz  = lhz - xyz[3*i+2];
+           rx = minImage(rx, box[0]);
+           ry = minImage(ry, box[1]);
+           rz = minImage(rz, box[2]);
+           rij = sqrt(rx*rx + ry*ry + rz*rz);
+           /* unit vector in tagged H-i atom direction */
+           urx = rx/rij;
+           ury = ry/rij;
+           urz = rz/rij;
+           /* integrate on a grid to get Hellman--Feynman forces
+              units here are: kJ/mol for the energy and Angstrom for the distance */
+           Fqm[3*indH]   += dr*evecs[alpha*ngrid+n]*evecs[alpha*ngrid+n]*tij*urx/(eps_r*rij*rij);
+           Fqm[3*indH+1] += dr*evecs[alpha*ngrid+n]*evecs[alpha*ngrid+n]*tij*ury/(eps_r*rij*rij);
+           Fqm[3*indH+2] += dr*evecs[alpha*ngrid+n]*evecs[alpha*ngrid+n]*tij*urz/(eps_r*rij*rij);
         }
      }
   }
