@@ -216,6 +216,9 @@ void Subsystem::kinetic()
 {
  /* 
    Build kinetic energy matrix using DVR basis
+
+   December 2018
+
  */
   
   for(int n=0; n<(ngrid*ngrid); ++n)
