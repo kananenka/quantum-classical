@@ -45,8 +45,8 @@ void force_c(Subsystem &QS, double *forces, double *vij, double* sigma,
            excluded here.
            Force on each classical DOF by other classical DOFs 
         */
-        if(j != QS.indH ){
-           if( i != QS.indH ){
+        //if(j != QS.indH ){
+        //   if( i != QS.indH ){
               tij = vij[i*natoms+j];
               /* check if two atoms interact via Coulomb
                  forces (must belong to different molecules) 
@@ -81,16 +81,52 @@ void force_c(Subsystem &QS, double *forces, double *vij, double* sigma,
                     sr12_s = sr6_s*sr6_s;
                     ljtemp = 12.0*sr12/rij - 6.0*sr6/rij
                            - 12.0*sr12_s/r_cut + 6.0*sr6_s/r_cut;
-                    Flj[3*i]   = 4.0*elj*ljtemp*urx/rij;
-                    Flj[3*i+1] = 4.0*elj*ljtemp*ury/rij;
-                    Flj[3*i+2] = 4.0*elj*ljtemp*urz/rij;
+                    Flj[3*i]   = 4.0*elj*ljtemp*urx;
+                    Flj[3*i+1] = 4.0*elj*ljtemp*ury;
+                    Flj[3*i+2] = 4.0*elj*ljtemp*urz;
                  }
               }
-           }
-        }
+          // }
+        //}
      }
   }
 
+  /* To keep the center of mass of the overall system stationary we
+     need to make sure that the net force is zero. Scale forces here */
+  double fx = 0.0;
+  double fy = 0.0;
+  double fz = 0.0;
+
+  for(int s=0; s<natoms; ++s){
+     fx += Fc[3*s];
+     fy += Fc[3*s+1];
+     fz += Fc[3*s+2];
+  }
+
+  std::cout << " Net force = " << fx << " " << fy << " " << fz << " " << std::endl;
+ 
+  for(int s=0; s<natoms; ++s){
+     Fc[3*s]   -= fx/natoms;
+     Fc[3*s+1] -= fy/natoms;
+     Fc[3*s+2] -= fz/natoms;
+  }
+
+  fx = 0.0;
+  fy = 0.0;
+  fx = 0.0;
+
+  for(int s=0; s<natoms; ++s){
+     fx += Flj[3*s];
+     fy += Flj[3*s+1];
+     fz += Flj[3*s+2];
+  }
+
+  for(int s=0; s<natoms; ++s){
+     Flj[3*s]   -= fx/natoms;
+     Flj[3*s+1] -= fy/natoms;
+     Flj[3*s+2] -= fz/natoms;
+  }
+ 
   /* write forces to external file */
   FILE *ffile = fopen("Force.txt","w");
   fprintf(ffile,"# Fq_x \t Fq_y \t Fq_z \t Fc_x \t Fc_y \t Fc_z \t Flj_x \t Flj_y \t Flj_z \n");
@@ -101,10 +137,6 @@ void force_c(Subsystem &QS, double *forces, double *vij, double* sigma,
              Flj[3*n], Flj[3*n+1], Flj[3*n+2]);
   fclose(ffile);
   std::cout << " All forces are saved to: Force.txt " << std::endl;
-
-  /* add Coulomb and LJ forces together */
-  for(int s=0; s<(3*natoms); ++s)
-     forces[s] = QS.Fqm[s] + Fc[s] + Flj[s];
 
   free (Fc);
   free (Flj);
