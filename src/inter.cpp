@@ -136,6 +136,10 @@ void force_c(Subsystem &QS, double *forces, double *vij, double* sigma,
   fclose(ffile);
   std::cout << " All forces are saved to: Force.txt " << std::endl;
 
+  /* add all forces together */
+  for(int s=0; s<(3*natoms); ++s)
+     forces[s] = QS.Fqm[s] + Fc[s] + Flj[s];
+
   free (Fc);
   free (Flj);
 
