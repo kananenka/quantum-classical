@@ -6,6 +6,7 @@
 #include "types.h"
 #include "quant.hpp"
 #include "qs.hpp"
+#include "settle.hpp"
 
 #ifndef MAIN_IH
 #define MAIN_IH
