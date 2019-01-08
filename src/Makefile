@@ -3,7 +3,7 @@ FFLAGS=-L${MKLROOT}/lib -Wl,-rpath,${MKLROOT}/lib -lmkl_intel_lp64 -lmkl_sequent
 LIBS=-L/usr/local/lib
 INCLUDES=#-I${MKLROOT}/include
 OBJECTS=main.o read_write.o move.o inter.o util.o energy.o pes.o qs.o\
-        cstr.o
+        settle.o
 
 run: $(OBJECTS)
 	$(COMP) -o run $(INCLUDES) $(LIBS) $(OBJECTS) $(FFLAGS)
@@ -33,8 +33,8 @@ pes.o: pes.cpp
 qs.o: qs.cpp
 	$(COMP) -c qs.cpp
 
-cstr.o: cstr.cpp
-	$(COMP) -c cstr.cpp
+settle.o: settle.cpp
+	$(COMP) -c settle.cpp
 
 clean:
 	rm *.o run
