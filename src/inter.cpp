@@ -38,6 +38,11 @@ void force_c(Subsystem &QS, double *forces, double *vij, double* sigma,
   double sr, sr2, sr4, sr6, sr12;
   double sr_s, sr2_s, sr4_s, sr6_s, sr12_s;
 
+  for(int i=0; i<(3*natoms); ++i){
+     Fc[i]  = 0.0;
+     Flj[i] = 0.0;
+  }
+
   for(int i=0; i<natoms; ++i){
      for(int j=0; j<natoms; ++j){
         /* tagged H atom acts on the rest of the system through
