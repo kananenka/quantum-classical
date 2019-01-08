@@ -62,6 +62,7 @@ int main(int argc, char** argv){
  double dr = 0.02;      // grid step size
  int Ngrid   = 56;
  int alpha = 0;         // active quantum state
+ double dt = 0.001;     // time-step in ps    
 
  /* 
     end of temporary input 
@@ -98,11 +99,16 @@ int main(int argc, char** argv){
  /* read constraints */
  read_const(cst_file, nconst, natoms, inter, cbond, cang);
 
+ /* create settle */
+ double dOH = 1.0;
+ double dHH = 1.633;
+ Settle Stl(dOH, dHH, nmols, dt); //dOH and dHH for a SPC water model
+
  /* build coulomb interaction matrix */
  coulomb_m(charges, vij, natoms, inter);
 
  /* correct box */
- //inbox(xyz, natoms, box);
+ inbox(xyz, box, natoms);
 
  /* remove center of mass velocity */
  com_v(mass, vel, natoms);
@@ -111,18 +117,21 @@ int main(int argc, char** argv){
  energy(ek, elj, ec, tempK, vel, xyz, mass, natoms, nconst, 
         vij, sigma, eps, eps_r, box, lj_cut, QS);
 
- /* calculate properties of a quantum subsystem: energies and forces  */
- QS.eval(sigma, eps, vij, xyz, atoms_mol, nmols, natoms, 
-         box, eps_r, alpha);
+ //std::cout << QS.e0 << " " << QS.e1 << " " << QS.w01 << " " << QS.anh 
+ //          << " " << QS.qav0 << " " << QS.qav1 << std::endl;
 
- /* add classical forces to quantum forces evaluated above */
- force_c(QS, forces, vij, sigma, eps, xyz, eps_r, box, 
-         lj_cut, natoms);
-
- std::cout << QS.e0 << " " << QS.e1 << " " << QS.w01 << " " << QS.anh 
-           << " " << QS.qav0 << " " << QS.qav1 << std::endl;
-
+ std::cout << " Box : " << box[0] << " " << box[1] << " " << box[2] << std::endl;
  std::cout << " Total energy = " << ek + elj + ec + QS.e0 << std::endl;
+
+ /* main routine */
+ for(int timesteps = 0; timesteps < 10; ++timesteps){
+    move(QS, Stl, xyz, vel, mass, vij, sigma, eps, eps_r, box, 
+         forces, natoms, lj_cut, dt, atoms_mol, nmols, alpha);
+    com_v(mass, vel, natoms);
+    energy(ek, elj, ec, tempK, vel, xyz, mass, natoms, nconst,
+        vij, sigma, eps, eps_r, box, lj_cut, QS);
+    std::cout << " Total energy = " << ek + elj + ec + QS.e0 << std::endl;
+ }
 
  /* After each integration step the coordinates
 of the particles must be examined. If a particle is found to have left
