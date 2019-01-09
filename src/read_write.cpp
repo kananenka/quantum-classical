@@ -123,7 +123,7 @@ void read_ff(std::string ff_file, double* charge, double* mass, double* sigma,
      while(ss >> buf)
         strs.push_back(buf);
 
-     mass[t]    = atof(strs[1].c_str());
+     mass[t]    = atof(strs[1].c_str())/1000.0;
      charge[t]  = atof(strs[2].c_str());
      s_temp[t]  = atof(strs[3].c_str());
      e_temp[t]  = atof(strs[4].c_str());
