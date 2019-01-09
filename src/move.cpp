@@ -27,9 +27,9 @@ void move(Subsystem &QS, Settle &Stl, double* xyz, double* vel, double* mass,
      xyzb[s] = xyz[s];
 
   std::cout << "---- Step ---- " << std::endl;
-  std::cout << " Starting xyz and vel " << std::endl;
-  std::cout << xyz[0] << " " << xyz[1] << " " << xyz[2] << std::endl;
-  std::cout << vel[0] << " " << vel[1] << " " << vel[2] << std::endl;
+  //std::cout << " Starting xyz and vel " << std::endl;
+  //std::cout << " XYZ = " << xyz[0] << " " << xyz[1] << " " << xyz[2] << std::endl;
+  //std::cout << " V = " << vel[0] << " " << vel[1] << " " << vel[2] << std::endl;
 
   /* calculate forces */
   QS.eval(sigma, eps, vij, xyz, atoms_mol, nmols, natoms,
@@ -40,9 +40,9 @@ void move(Subsystem &QS, Settle &Stl, double* xyz, double* vel, double* mass,
 
   /* Step 1: v(t+dt/2) = v(t) + dt*F(t)/(2*m) */
   for(int n=0; n<natoms; ++n){
-     vel[3*n  ] += dt*forces[3*n  ]/(2.0*mass[n]);
-     vel[3*n+1] += dt*forces[3*n+1]/(2.0*mass[n]);
-     vel[3*n+2] += dt*forces[3*n+2]/(2.0*mass[n]);
+     vel[3*n  ] += 0.1*dt*forces[3*n  ]/(2.0*mass[n]);
+     vel[3*n+1] += 0.1*dt*forces[3*n+1]/(2.0*mass[n]);
+     vel[3*n+2] += 0.1*dt*forces[3*n+2]/(2.0*mass[n]);
   }
 
   /* Step 2: x(t+dt) = x(t) + dt*v(t+dt/2) */
@@ -64,20 +64,24 @@ void move(Subsystem &QS, Settle &Stl, double* xyz, double* vel, double* mass,
 
   /* Step 4: v(t+dt) = v(t+dt/2) + dt*F(t+dt)/(2*m) */
   for(int n=0; n<natoms; ++n){
-     vel[3*n]   += dt*forces[3*n]/(2.0*mass[n]);
-     vel[3*n+1] += dt*forces[3*n+1]/(2.0*mass[n]);
-     vel[3*n+2] += dt*forces[3*n+2]/(2.0*mass[n]);
+     vel[3*n]   += 0.1*dt*forces[3*n]/(2.0*mass[n]);
+     vel[3*n+1] += 0.1*dt*forces[3*n+1]/(2.0*mass[n]);
+     vel[3*n+2] += 0.1*dt*forces[3*n+2]/(2.0*mass[n]);
   }
 
-  /* apply contraints here */
-  Stl.settle1(xyzb, xyz, vel);
+  //std::cout << " before settle... " << std::endl;
+  //std::cout << " XYZ " << xyz[0] << " " << xyz[1] << " " << xyz[2] << std::endl;
+  //std::cout << " V " << vel[0] << " " << vel[1] << " " << vel[2] << std::endl;
 
+  /* apply contraints here */
+  Stl.settle1(xyzb, xyz, vel, box);
+ 
   /* if atoms moved outside of the box put them back on the other side */
   inbox(xyz, box, natoms);
 
-  std::cout << " final xyz and vel " << std::endl;
-  std::cout << xyz[0] << " " << xyz[1] << " " << xyz[2] << std::endl;
-  std::cout << vel[0] << " " << vel[1] << " " << vel[2] << std::endl;
+  //std::cout << " final xyz and vel " << std::endl;
+  //std::cout << " XYZ = " << xyz[0] << " " << xyz[1] << " " << xyz[2] << std::endl;
+  //std::cout << " V = " << vel[0] << " " << vel[1] << " " << vel[2] << std::endl;
   
   free (xyzb);
 
