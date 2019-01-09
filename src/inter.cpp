@@ -33,7 +33,7 @@ void force_c(Subsystem &QS, double *forces, double *vij, double* sigma,
   Flj = (double *)calloc(3*natoms, sizeof(double));
 
   double tij, elj, ljtemp;
-  double rx, ry, rz, rij;
+  double rx, ry, rz, rij, rij2;
   double urx, ury, urz; 
   double sr, sr2, sr4, sr6, sr12;
   double sr_s, sr2_s, sr4_s, sr6_s, sr12_s;
@@ -45,7 +45,8 @@ void force_c(Subsystem &QS, double *forces, double *vij, double* sigma,
 
   for(int i=0; i<natoms; ++i){
      for(int j=0; j<natoms; ++j){
-        /* tagged H atom acts on the rest of the system through
+        /* 
+           tagged H atom acts on the rest of the system through
            quantum Hellman--Feynman forces and, therefore, is
            excluded here.
            Force on each classical DOF by other classical DOFs 
@@ -53,7 +54,8 @@ void force_c(Subsystem &QS, double *forces, double *vij, double* sigma,
         if(j != QS.indH ){
            if( i != QS.indH ){
               tij = vij[i*natoms+j];
-              /* check if two atoms interact via Coulomb
+              /* 
+                 check if two atoms interact via Coulomb
                  forces (must belong to different molecules) 
               */
               if(abs(tij) > 1.0e-7){
@@ -63,14 +65,15 @@ void force_c(Subsystem &QS, double *forces, double *vij, double* sigma,
                  rx = minImage(rx, box[0]);
                  ry = minImage(ry, box[1]);
                  rz = minImage(rz, box[2]);
-                 rij = sqrt(rx*rx + ry*ry + rz*rz);
+                 rij2 = rx*rx + ry*ry + rz*rz;
+                 rij  = sqrt(rij2);
                  /* unit vector in ij direction */
                  urx = rx/rij;
                  ury = ry/rij;
                  urz = rz/rij;
-                 Fc[3*i]   += tij*urx/(eps_r*rij*rij);
-                 Fc[3*i+1] += tij*ury/(eps_r*rij*rij);
-                 Fc[3*i+2] += tij*urz/(eps_r*rij*rij);
+                 Fc[3*i]   += tij*urx/(eps_r*rij2);
+                 Fc[3*i+1] += tij*ury/(eps_r*rij2);
+                 Fc[3*i+2] += tij*urz/(eps_r*rij2);
                  /* add Lennard-Jones forces */
                  elj = eps[i*natoms+j];
                  if(abs(elj) > 1.0e-7){
