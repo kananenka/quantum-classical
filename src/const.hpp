@@ -21,9 +21,9 @@
 
 /* 
    convert kinetic energy from a.u.*A^2/ps^2 to kJ/mol
-   conversion factor = 1.6605e-27 * 1e24 * 1e-20 * 1e-3 / 6.022e23
+   conversion factor = 1.6605e-27 * 1e24 * 1e-20 / 6.022e23
 */
-#define KE_convert 0.0100      
+#define KE_convert 10.0      
 
 /* 
    Avogadro number
