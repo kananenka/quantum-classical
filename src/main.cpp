@@ -129,18 +129,9 @@ int main(int argc, char** argv){
          forces, natoms, lj_cut, dt, atoms_mol, nmols, alpha);
     com_v(mass, vel, natoms);
     energy(ek, elj, ec, tempK, vel, xyz, mass, natoms, nconst,
-        vij, sigma, eps, eps_r, box, lj_cut, QS);
+           vij, sigma, eps, eps_r, box, lj_cut, QS);
     std::cout << " Total energy = " << ek + elj + ec + QS.e0 << std::endl;
  }
-
- /* After each integration step the coordinates
-of the particles must be examined. If a particle is found to have left
-the simulation region, its coordinates must be readjusted to bring it back
-inside, which is equivalent to bring in an image particle through the opposite
-boundary. Supposing that the simulation region is a rectangular box, this is
-done by adding to or subtracting from the affected particle coordinate the
-size L of the box along the corresponding direction. May be call it from
-verlet/leapfrog propagation routine*/
 
  /* close files */
  fclose (ET_File);
