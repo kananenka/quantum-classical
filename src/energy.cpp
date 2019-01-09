@@ -39,7 +39,7 @@ void energy(double &ek, double &elj, double &ec,
                             vel[3*s+2]*vel[3*s+2]);
 
    /* 
-      units for the kinetic energy above are: a.u.*A^2/ps^2 
+      units for the kinetic energy above are: kg*A^2/ps^2 
       we want to report this energy in kJ/mol 
    */
    ek *= KE_convert;
