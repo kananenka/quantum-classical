@@ -32,8 +32,6 @@ int main(int argc, char** argv){
  FILE * ET_File;     // temperature and energy file
 
  /* define arrays */
- double *xyz, *box, *vel;
- double *charges, *mass, *sigma, *eps, *vij;
  double *forces;
  bool *inter;
 
@@ -41,27 +39,18 @@ int main(int argc, char** argv){
  double ek, elj, ec, tempK;
  int nconst;
 
- /* define constraints */
- const_angles *cang;
- const_bonds  *cbond;
-
  /* 
     read params here...write function to read everything from the input file 
     temporary define all parameters below
  */
- int nmols = 500; 
- int atoms_mol = 3;
+ int nmols = 255; 
+ int atoms_mol = 2;
  double eps_r = 1.0;    // relative dielectric constant
- std::string gro_file = "confout.gro";
- std::string ff_file  = "water.ff";
- std::string cst_file = "water.const";
- int tag_mol = 1;
- int tag_atom = 1;      // this can only be 1 or 2 since atom0 is oxygen
- double lj_cut = 9.0;   // cut-off LJ interactions
+ std::string data_file = "data.in";
+ double lj_cut = 12.0;   // cut-off LJ interactions
  double r0 = 0.6572;    // OH shortest distance in A
  double dr = 0.02;      // grid step size
  int Ngrid   = 56;
- int alpha = 0;         // active quantum state
  double dt = 0.001;     // time-step in ps    
 
  /* 
@@ -70,84 +59,53 @@ int main(int argc, char** argv){
 
  int natoms = nmols*atoms_mol;
 
- /* define quantum subsystem */
- Subsystem QS(Ngrid, tag_mol, tag_atom, r0, dr, atoms_mol, natoms);
+ System S(natoms, data_file);
+ 
+ S.com_v();
 
- /* allocate arrays */
- cang    = (const_angles *)calloc(1,sizeof(const_angles));
- cbond   = (const_bonds *)calloc(1,sizeof(const_bonds));
- xyz     = (double *)calloc(natoms*3, sizeof(double)); 
- vel     = (double *)calloc(natoms*3, sizeof(double));
- box     = (double *)calloc(3, sizeof(double));
- charges = (double *)calloc(natoms, sizeof(double));
- mass    = (double *)calloc(natoms, sizeof(double));
- sigma   = (double *)calloc(natoms*natoms, sizeof(double));
- eps     = (double *)calloc(natoms*natoms, sizeof(double));
- vij     = (double *)calloc(natoms*natoms, sizeof(double));
- inter   = (bool *)calloc(natoms*natoms, sizeof(double));
- forces  = (double *)calloc(3*natoms, sizeof(double));
+ exit(0);
+
+ /* define quantum subsystem */
+ //Subsystem QS(Ngrid, tag_mol, tag_atom, r0, dr, atoms_mol, natoms);
 
  /* Open files to write some runtime info */
  ET_File = fopen("ET.out","w"); 
 
- /* read coordinates and velocities from *.gro file */
- read_xyz(gro_file, xyz, vel, natoms, box, atoms_mol);
-
- /* read force field parameters, return sigma_ij and eps_ij mat. */
- read_ff(ff_file, charges, mass, sigma, eps, natoms);
-
- /* read constraints */
- read_const(cst_file, nconst, natoms, inter, cbond, cang);
-
  /* create settle */
- double dOH = 1.0;
- double dHH = 1.633;
- Settle Stl(dOH, dHH, nmols, dt); //dOH and dHH for a SPC water model
-
- /* build coulomb interaction matrix */
- coulomb_m(charges, vij, natoms, inter);
+ //double dOH = 1.0;
+ //double dHH = 1.633;
+ //Settle Stl(dOH, dHH, nmols, dt); //dOH and dHH for a SPC water model
 
  /* correct box */
- inbox(xyz, box, natoms);
+ //inbox(xyz, box, natoms);
 
  /* remove center of mass velocity */
- com_v(mass, vel, natoms);
+ //com_v(mass, vel, natoms);
 
  /* calculate temperature, kinetic and potential energy */
- energy(ek, elj, ec, tempK, vel, xyz, mass, natoms, nconst, 
-        vij, sigma, eps, eps_r, box, lj_cut, QS);
+ //energy(ek, elj, ec, tempK, vel, xyz, mass, natoms, nconst, 
+ //       vij, sigma, eps, eps_r, box, lj_cut, QS);
 
  //std::cout << QS.e0 << " " << QS.e1 << " " << QS.w01 << " " << QS.anh 
  //          << " " << QS.qav0 << " " << QS.qav1 << std::endl;
 
- std::cout << " Box : " << box[0] << " " << box[1] << " " << box[2] << std::endl;
- std::cout << " Total energy = " << ek + elj + ec + QS.e0 << std::endl;
+ //std::cout << " Box : " << box[0] << " " << box[1] << " " << box[2] << std::endl;
+ //std::cout << " Total energy = " << ek + elj + ec + QS.e0 << std::endl;
 
  /* main routine */
- for(int timesteps = 0; timesteps < 10; ++timesteps){
-    move(QS, Stl, xyz, vel, mass, vij, sigma, eps, eps_r, box, 
-         forces, natoms, lj_cut, dt, atoms_mol, nmols, alpha);
-    com_v(mass, vel, natoms);
-    energy(ek, elj, ec, tempK, vel, xyz, mass, natoms, nconst,
-           vij, sigma, eps, eps_r, box, lj_cut, QS);
-    std::cout << " Total energy = " << ek + elj + ec + QS.e0 << std::endl;
- }
+ //for(int timesteps = 0; timesteps < 100; ++timesteps){
+ //   move(QS, Stl, xyz, vel, mass, vij, sigma, eps, eps_r, box, 
+ //        forces, natoms, lj_cut, dt, atoms_mol, nmols, alpha);
+ //   com_v(mass, vel, natoms);
+ //   energy(ek, elj, ec, tempK, vel, xyz, mass, natoms, nconst,
+ //          vij, sigma, eps, eps_r, box, lj_cut, QS);
+ //   std::cout << " Total energy = " << ek + elj + ec + QS.e0 << std::endl;
+ //   fprintf(ET_File," %f %f %f %f %f %f \n ",timesteps*dt,ek,tempK,elj,ec,(ek+elj+ec));
+ //}
 
  /* close files */
  fclose (ET_File);
 
- /* free up memory */
- free (cang); free (cbond);
- free (xyz); 
- free (vel);
- free (box);
- free (charges);
- free (mass);
- free (sigma);
- free (eps);
- free (vij);
- free (inter);
- free (forces);
 
  return 0;
 }
