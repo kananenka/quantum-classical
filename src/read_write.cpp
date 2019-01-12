@@ -143,7 +143,6 @@ void read_ff(std::string ff_file, double* charge, double* mass, double* sigma,
   }
 
   free (e_temp);
-  free (s_temp);
 
   return;
 }
