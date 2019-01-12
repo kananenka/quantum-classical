@@ -7,7 +7,7 @@
 
 */
 #define nbond_max  5000
-#define nang_max   5000
+#define INTER_MAX  5000
 
 /* 
     1/(4*pi*eps) factor in Coulomb energy in kJ/(mol*A*e^2)
@@ -20,10 +20,14 @@
 #define unitC    10.0          
 
 /* 
-   convert kinetic energy from a.u.*A^2/ps^2 to kJ/mol
-   conversion factor = 1.6605e-27 * 1e24 * 1e-20 / 6.022e23
+   convert kinetic energy from (g/mol)*A^2/ps^2 to kJ/mol
 */
-#define KE_convert 10.0      
+#define KE_convert 0.01
+
+/* 
+  convert density from g/(mol*A^3) to kg/m^3
+*/
+#define densf 1660.539
 
 /* 
    Avogadro number
@@ -31,9 +35,9 @@
 #define Na 6.0221367e23
 
 /*
-   Boltzmann constant
+   Boltzmann constant in kJ/(mol*K)
 */
-#define Kb 1.38064852e-23 
+#define Kb 0.0083144621
 
 /* 
    Atomic masses
