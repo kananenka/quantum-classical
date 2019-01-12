@@ -6,18 +6,22 @@
 /*  bond constraints */
 typedef struct {
     int N;
-    int inda[nbond_max];
-    int indb[nbond_max];
-    double val[nbond_max];
-} const_bonds;
+    int *inda;
+    int *indb;
+    double *val;
+} CONSTR;
 
-/* angles contraints */
+/* interaction matrix */
 typedef struct {
-    int N;
-    int inda[nang_max];
-    int indb[nang_max];
-    int indc[nang_max];
-    double val[nang_max];
-} const_angles;
+  int nLJ;
+  int  *LJa;
+  int  *LJb;
+  double *eps;
+  double *sig;
+  int nC;
+  int  *Ca;
+  int  *Cb;
+  double *vij;
+} INTERM;
 
 #endif
