@@ -7,8 +7,8 @@
 #include <sstream>
 #include "system.hpp"
 
-System::System(int natoms, std::string data_file):
-               natoms(natoms), data_file(data_file)
+System::System(int natoms, std::string data_file, double rcut):
+               natoms(natoms), data_file(data_file), rcut(rcut)
 {
  
  /* allocate arrays */
@@ -40,11 +40,13 @@ System::System(int natoms, std::string data_file):
  build_interaction();
 
  /* fix box */
- inbox();
+ //inbox();
 
  kinetic();
 
  potential();
+
+ printe();
 
 }
 
@@ -201,7 +203,6 @@ void System::read_in()
   vol = box[0]*box[1]*box[2];
   rho = tmass/vol;
   rho *= densf;
-  printf(" Density %7.2f [kg/m^3] \n ",rho);
 }
 
 void System::build_interaction()
@@ -267,7 +268,7 @@ void System::build_interaction()
    }
    imat->nLJ = counter;
 
-   std::cout << " Lennard-Jones interaction pairs: " << imat->nLJ << std::endl;
+   printf(" Lennard-Jones interaction pairs: %d \n",imat->nLJ);
 
    double qq;
    counter = 0;
@@ -305,7 +306,7 @@ void System::build_interaction()
    }
    imat->nC = counter;
 
-   std::cout << " Coulomb interaction pairs: " << imat->nC << std::endl;
+   printf(" Coulomb interaction pairs: %d \n",imat->nC);
 
 }
 
@@ -390,7 +391,6 @@ void System::kinetic()
 
    Ek *= KE_convert;
 
-   printf(" Classical Kinetic energy = %9.5f [kJ/mol] \n",Ek);
     
    /* 
       To calculate absolute temperature we use the following
@@ -408,7 +408,6 @@ void System::kinetic()
 
    Tk = 2.0*Ek/(Ndf*Kb);   
 
-   printf(" Temperature = %5.2f [K] \n",Tk);
 }
 
 void System::potential()
@@ -419,8 +418,6 @@ void System::potential()
    January 2019
 */
 
-   ELJ = 0.0;
-   Ec  = 0.0;
 
    for(int s=0; s<natoms; ++s){
       force[s] = 0.0;
@@ -428,6 +425,141 @@ void System::potential()
       flj[s]   = 0.0;
    }
 
+   int i, j;
+   double ix, iy, iz, jx, jy, jz, dx, dy, dz, r2, r;
+   double e, s, er, er3, er6, er12, sr, sr3, sr6;
+   double erc, erc3, erc6, erc12, src, src3, src6;
+   double ux, uy, uz, gamma;
+    
    /* Lennard-Jones truncated potential */
+   ELJ = 0.0;
+   for(int n=0; n<imat->nLJ; ++n){
 
+      i = imat->LJa[n];
+      j = imat->LJb[n];
+
+      ix = xyz[3*i];
+      iy = xyz[3*i+1];
+      iz = xyz[3*i+2];
+
+      jx = xyz[3*j];
+      jy = xyz[3*j+1];
+      jz = xyz[3*j+2];
+
+      dx = minImage(ix - jx, box[0]);
+      dy = minImage(iy - jy, box[1]);
+      dz = minImage(iz - jz, box[2]);
+
+      r2 = dx*dx + dy*dy + dz*dz;
+      r  = sqrt(r2);
+
+      if(r < rcut){
+
+         e = imat->eps[n];
+         s = imat->sig[n];
+
+         er = e/r;
+         er3 = er*er*er;
+         er6 = er3*er3;
+         er12 = er6*er6;
+
+         sr = s/r;
+         sr3 = sr*sr*sr;
+         sr6 = sr3*sr3;
+
+         erc = e/rcut;
+         erc3 = erc*erc*erc;
+         erc6 = erc3*erc3;
+         erc12 = erc6*erc6;
+
+         src = s/rcut;
+         src3 = src*src*src;
+         src6 = src3*src3; 
+
+         ELJ += er12 - sr6 - erc12 + src6;
+
+         ux = dx/r;
+         uy = dy/r;
+         uz = dz/r;
+
+         gamma = (12.0*er12 - 6.0*sr6)/r;
+
+         flj[3*i]   += gamma*ux;
+         flj[3*i+1] += gamma*uy;
+         flj[3*i+2] += gamma*uz;
+
+         flj[3*j]   -= gamma*ux;
+         flj[3*j+1] -= gamma*uy;
+         flj[3*j+2] -= gamma*uz;
+      } 
+   }
+
+   double qq; 
+   double alpha = 1.0/(rcut*rcut);
+   double beta  = -1.0/rcut;
+
+   /* Coulomb energy/forces */
+   Ec  = 0.0;
+   for(int n=0; n<imat->nC; ++n){
+
+      i = imat->Ca[n];
+      j = imat->Cb[n];
+
+      ix = xyz[3*i];
+      iy = xyz[3*i+1];
+      iz = xyz[3*i+2];
+
+      jx = xyz[3*j];
+      jy = xyz[3*j+1];
+      jz = xyz[3*j+2];
+
+      dx = minImage(ix - jx, box[0]);
+      dy = minImage(iy - jy, box[1]);
+      dz = minImage(iz - jz, box[2]);
+
+      r2 = dx*dx + dy*dy + dz*dz;
+      r  = sqrt(r2);
+
+      if(r < rcut){
+
+         qq = imat->vij[n];
+
+         Ec += qq*(1.0/r + alpha*(r - rcut) + beta);
+
+         ux = dx/r;
+         uy = dy/r;
+         uz = dz/r;
+
+         gamma = qq*(1.0/r2 - alpha);
+ 
+         fc[3*i]   += gamma*ux;
+         fc[3*i+1] += gamma*uy;
+         fc[3*i+2] += gamma*uz;
+
+         fc[3*j]   -= gamma*ux;
+         fc[3*j+1] -= gamma*uy;
+         fc[3*j+2] -= gamma*uz;         
+      }
+   }
+
+   /* Calculate and print total energy */
+   Ep = ELJ + Ec;
+   Et = Ek + Ep;
+}
+
+void System::printe()
+{
+/*
+    Print system data: energies, temperature, etc.
+
+    January 2019
+*/
+   printf("------------------- System -------------------\n");
+   printf(" Kinetic energy       = %9.2f  [ kJ/mol ] \n",Ek);
+   printf(" Lennard-Jones energy = %9.2f  [ kJ/mol ] \n",ELJ);
+   printf(" Coulomb energy       = %9.2f  [ kJ/mol ] \n",Ec);
+   printf(" Potential energy     = %9.2f  [ kJ/mol ] \n",Ep);
+   printf(" Total energy         = %9.2f  [ kJ/mol ] \n",Et);
+   printf(" Temperature          = %9.2f  [ K ] \n",Tk);
+   printf(" Density              = %9.2f  [ kg/m^3 ] \n ",rho);
 }
