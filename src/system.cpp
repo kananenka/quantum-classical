@@ -40,7 +40,7 @@ System::System(int natoms, std::string data_file, double rcut):
  build_interaction();
 
  /* fix box */
- //inbox();
+ inbox();
 
  kinetic();
 
@@ -365,7 +365,7 @@ void System::inbox()
      for(int d=0; d<3; ++d){
         corr = (xyz[3*n+d] > box[d]) ? -box[d] : 0.0;
         xyz[3*n+d]   += corr;
-        corr = (xyz[3*n+d] < box[d]) ? box[d] : 0.0;
+        corr = (xyz[3*n+d] < 0.0) ? box[d] : 0.0;
         xyz[3*n+d] += corr;
      }
 }
@@ -554,7 +554,7 @@ void System::printe()
 
     January 2019
 */
-   printf("------------------- System -------------------\n");
+   printf("\n------------------- System -------------------\n");
    printf(" Kinetic energy       = %9.2f  [ kJ/mol ] \n",Ek);
    printf(" Lennard-Jones energy = %9.2f  [ kJ/mol ] \n",ELJ);
    printf(" Coulomb energy       = %9.2f  [ kJ/mol ] \n",Ec);
@@ -562,4 +562,5 @@ void System::printe()
    printf(" Total energy         = %9.2f  [ kJ/mol ] \n",Et);
    printf(" Temperature          = %9.2f  [ K ] \n",Tk);
    printf(" Density              = %9.2f  [ kg/m^3 ] \n ",rho);
+   printf("----------------------------------------------\n");
 }
