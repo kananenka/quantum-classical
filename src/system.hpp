@@ -22,11 +22,12 @@ class System {
   
   int nmax, Ndf;
   double tmass;
+  FILE *ffile, *sfile;
 
   public:
 
   double Ek, Ep, ELJ, Ec, Et;
-  double Tk, rho, vol, rcut; 
+  double Tk, rho, vol, rcut, dt; 
   std::string data_file;
   int natoms, ncons;
   double *xyz, *vel, *mass, *box, *sig, *eps, *chg, *force, *fc, *flj;   
@@ -34,7 +35,7 @@ class System {
   CONSTR *cbond;
   INTERM *imat;
 
-  System(int, std::string, double);
+  System(int, std::string, double, double);
 
   ~System()
   {
@@ -60,6 +61,12 @@ class System {
    void potential();
 
    void printe();
+
+   void vv_vel();
+
+   void vv_xyz();
+
+   void save();
 
 };
 

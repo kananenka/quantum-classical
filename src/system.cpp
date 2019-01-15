@@ -7,8 +7,8 @@
 #include <sstream>
 #include "system.hpp"
 
-System::System(int natoms, std::string data_file, double rcut):
-               natoms(natoms), data_file(data_file), rcut(rcut)
+System::System(int natoms, std::string data_file, double rcut, double dt):
+               natoms(natoms), data_file(data_file), rcut(rcut), dt(dt)
 {
  
  /* allocate arrays */
@@ -47,6 +47,15 @@ System::System(int natoms, std::string data_file, double rcut):
  potential();
 
  printe();
+
+ printf(" Step 1 \n");
+ vv_vel();
+ vv_xyz();
+ potential();
+ vv_vel();
+ kinetic();
+ printe();
+ save();
 
 }
 
@@ -363,9 +372,9 @@ void System::inbox()
 
   for(int n=0; n<natoms; ++n)
      for(int d=0; d<3; ++d){
-        corr = (xyz[3*n+d] > box[d]) ? -box[d] : 0.0;
+        corr = (xyz[3*n+d] > box[d]/2.0) ? -box[d] : 0.0;
         xyz[3*n+d]   += corr;
-        corr = (xyz[3*n+d] < 0.0) ? box[d] : 0.0;
+        corr = (xyz[3*n+d] < -box[d]/2.0) ? box[d] : 0.0;
         xyz[3*n+d] += corr;
      }
 }
@@ -419,7 +428,7 @@ void System::potential()
 */
 
 
-   for(int s=0; s<natoms; ++s){
+   for(int s=0; s<(3*natoms); ++s){
       force[s] = 0.0;
       fc[s]    = 0.0;
       flj[s]   = 0.0;
@@ -542,9 +551,55 @@ void System::potential()
       }
    }
 
-   /* Calculate and print total energy */
+   /* Calculate total energy */
    Ep = ELJ + Ec;
    Et = Ek + Ep;
+
+   /* check net force */
+   double fx = 0.0;
+   double fy = 0.0;
+   double fz = 0.0;
+
+   for(int s=0; s<natoms; ++s){
+     fx += flj[3*s];
+     fy += flj[3*s+1];
+     fz += flj[3*s+2];
+   }
+
+   if(abs(fx)>1.0e-8 || abs(fy)>1.0e-8 || abs(fz)>1.0e-8){
+      printf(" Net LJ force is not zero: %7.5f %7.5f %7.5f \n",fx,fy,fz);
+      exit(EXIT_FAILURE);
+   }
+
+   fx = 0.0;
+   fy = 0.0;
+   fz = 0.0;
+
+   for(int s=0; s<natoms; ++s){
+      fx += fc[3*s];
+      fy += fc[3*s+1];
+      fz += fc[3*s+2];
+   }
+
+   if(abs(fx)>1.0e-8 || abs(fy)>1.0e-8 || abs(fz)>1.0e-8){
+      printf(" Net Coulomb force is not zero: %7.5f %7.5f %7.5f \n",fx,fy,fz);
+      exit(EXIT_FAILURE);
+   }
+
+   /* write forces to external file */
+   ffile = fopen("Force.txt","w");
+   fprintf(ffile,"# Fc_x \t Fc_y \t Fc_z \t Flj_x \t Flj_y \t Flj_z \n");
+   for(int n=0; n<natoms; ++n)
+      fprintf(ffile, " %7.5f %7.5f %7.5f %7.5f %7.5f %7.5f \n",
+             fc[3*n],  fc[3*n+1],  fc[3*n+2], 
+             flj[3*n], flj[3*n+1], flj[3*n+2]);
+   fclose(ffile);
+   printf(" All forces are saved to: Force.txt \n");
+
+   /* add all forces together */
+   for(int s=0; s<(3*natoms); ++s)
+      force[s] = fc[s] + flj[s];
+
 }
 
 void System::printe()
@@ -563,4 +618,48 @@ void System::printe()
    printf(" Temperature          = %9.2f  [ K ] \n",Tk);
    printf(" Density              = %9.2f  [ kg/m^3 ] \n ",rho);
    printf("----------------------------------------------\n");
+}
+
+void System::vv_vel(){
+/*
+   Velocity-Verlet algorithm part I.
+   v(t+dt/2) = v(t) + dt*F(t)/(2*m)
+  
+   January 2019
+*/
+  for(int n=0; n<natoms; ++n){
+     vel[3*n  ] += 100.0*dt*force[3*n  ]/(2.0*mass[n]);   
+     vel[3*n+1] += 100.0*dt*force[3*n+1]/(2.0*mass[n]);
+     vel[3*n+2] += 100.0*dt*force[3*n+2]/(2.0*mass[n]);
+  }
+}
+
+void System::vv_xyz(){
+/*
+   Velocity-Verlet algorithm part II.
+   x(t+dt) = x(t) + dt*v(t+dt/2)
+
+   January 2019
+*/
+  for(int n=0; n<natoms; ++n){
+     xyz[3*n  ] += dt*vel[3*n  ];
+     xyz[3*n+1] += dt*vel[3*n+1];
+     xyz[3*n+2] += dt*vel[3*n+2];
+  }
+
+  /* correct for box */
+  inbox();
+}
+
+void System::save(){
+/*
+   Write coordinates and velocities into a file
+*/
+  sfile = fopen("xyz.txt","w");
+  for(int n=0; n<natoms; ++n)
+     fprintf(sfile, " %7.5f %7.5f %7.5f %7.5f %7.5f %7.5f \n",
+             xyz[3*n],  xyz[3*n+1],  xyz[3*n+2],
+             vel[3*n],  vel[3*n+1],  vel[3*n+2]);
+   fclose(sfile);
+   printf(" All coordinates and velocities are saved to: xyz.txt \n");
 }
