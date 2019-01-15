@@ -3,6 +3,7 @@
 #include <cstdlib>
 #include "types.h"
 #include "const.hpp"
+#include "util.hpp"
 
 #ifndef __SYS__
 #define __SYS__
@@ -24,15 +25,16 @@ class System {
 
   public:
 
-  double Ek, Tk, Ep, ELJ, Ec, rho, vol; 
+  double Ek, Ep, ELJ, Ec, Et;
+  double Tk, rho, vol, rcut; 
   std::string data_file;
   int natoms, ncons;
   double *xyz, *vel, *mass, *box, *sig, *eps, *chg, *force, *fc, *flj;   
   double *cst;
-  CONSTR  *cbond;
-  INTERM  *imat;
+  CONSTR *cbond;
+  INTERM *imat;
 
-  System(int, std::string);
+  System(int, std::string, double);
 
   ~System()
   {
@@ -56,6 +58,8 @@ class System {
    void kinetic();
 
    void potential();
+
+   void printe();
 
 };
 
