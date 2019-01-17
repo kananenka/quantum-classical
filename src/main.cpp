@@ -47,7 +47,7 @@ int main(int argc, char** argv){
  int atoms_mol = 2;
  double eps_r = 1.0;    // relative dielectric constant
  std::string data_file = "data.in";
- double lj_cut = 12.0;   // cut-off LJ interactions
+ double rcut = 13.8;   // cut-off LJ interactions
  double r0 = 0.6572;    // OH shortest distance in A
  double dr = 0.02;      // grid step size
  int Ngrid   = 56;
@@ -59,10 +59,8 @@ int main(int argc, char** argv){
 
  int natoms = nmols*atoms_mol;
 
- System S(natoms, data_file);
+ System S(natoms, data_file, rcut, dt);
  
- S.com_v();
-
  exit(0);
 
  /* define quantum subsystem */
