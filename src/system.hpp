@@ -19,9 +19,11 @@
 class System {
 
   private:
-  
+
+  int shake_iter_max;  
+  double shake_tol;
   int nmax, Ndf;
-  double tmass;
+  double tmass, dt2;
   FILE *ffile, *sfile;
 
   public:
@@ -30,8 +32,8 @@ class System {
   double Tk, rho, vol, rcut, dt; 
   std::string data_file;
   int natoms, ncons;
-  double *xyz, *vel, *mass, *box, *sig, *eps, *chg, *force, *fc, *flj;   
-  double *cst;
+  double *xyz, *xyz_s, *vel, *mass, *box, *sig, *eps, *chg, *force, *fc, *flj;   
+  double *cst, *dxt, *dyt, *dzt, *dxx, *dyy, *dzz;
   CONSTR *cbond;
   INTERM *imat;
 
@@ -39,13 +41,14 @@ class System {
 
   ~System()
   {
-     free(xyz), free(vel), free(mass);
+     free(xyz), free(xyz_s), free(vel), free(mass);
      free(box), free(sig), free(eps);
      free(cst), free(chg), free(cbond);
      free(cbond->inda), free(cbond->indb), free(cbond->val);
      free(imat->LJa), free(imat->LJb), free(imat->eps), free(imat->sig);
      free(imat->Ca), free(imat->Cb), free(imat->vij);
      free(force), free(fc), free(flj);
+     free(dxt), free(dyt), free(dzt), free(dxx), free(dyy), free(dzz);
    };
 
    void read_in();
@@ -67,6 +70,8 @@ class System {
    void vv_xyz();
 
    void save();
+
+   void shake();
 
 };
 

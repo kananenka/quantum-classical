@@ -10,9 +10,22 @@
 System::System(int natoms, std::string data_file, double rcut, double dt):
                natoms(natoms), data_file(data_file), rcut(rcut), dt(dt)
 {
+/*
+    System's initializer
+
+    December 2018 - ...
+
+*/
+
+ /* set some constants */
+ shake_iter_max = 500; 
+ shake_tol = 1.0e-7;
+
+ dt2 = dt*dt;
  
  /* allocate arrays */
  xyz   = (double *)calloc(3*natoms, sizeof(double));
+ xyz_s = (double *)calloc(3*natoms, sizeof(double));
  vel   = (double *)calloc(3*natoms, sizeof(double));
  force = (double *)calloc(3*natoms, sizeof(double));
  fc    = (double *)calloc(3*natoms, sizeof(double));
@@ -56,6 +69,10 @@ System::System(int natoms, std::string data_file, double rcut, double dt):
  kinetic();
  printe();
  save();
+ shake();
+ kinetic();
+ potential();
+ printe();
 
 }
 
@@ -150,6 +167,14 @@ void System::read_in()
   cbond->inda = (int *)calloc(ncons, sizeof(int));
   cbond->indb = (int *)calloc(ncons, sizeof(int));
   cbond->val  = (double *)calloc(ncons, sizeof(double));
+
+  /* allocate arrays for SHAKE */
+  dxt   = (double *)calloc(ncons, sizeof(double));
+  dyt   = (double *)calloc(ncons, sizeof(double));
+  dzt   = (double *)calloc(ncons, sizeof(double));
+  dxx   = (double *)calloc(ncons, sizeof(double));
+  dyy   = (double *)calloc(ncons, sizeof(double));
+  dzz   = (double *)calloc(ncons, sizeof(double));
 
   for(int t=0; t<cbond->N; ++t)
   {
@@ -662,4 +687,107 @@ void System::save(){
              vel[3*n],  vel[3*n+1],  vel[3*n+2]);
    fclose(sfile);
    printf(" All coordinates and velocities are saved to: xyz.txt \n");
+}
+
+void System::shake(){
+/*
+   Implement SHAKE algorithm for constraints here
+
+   January 2019
+*/
+   int i, j, k, nsteps;
+   double esig, esig1, dx, dy, dz;
+   double dis, omega, amti, amtj, gamma, gammi, gammj;
+   bool converged = false;
+
+   /* save coordinates */
+   for(int s=0; s<(3*natoms); ++s)
+      xyz_s[s] = xyz[s];
+
+   /* calculate distances before SHAKE */
+   for(int c=0; c<cbond->N; ++c){
+      i = cbond->inda[c];
+      j = cbond->indb[c];
+      dxx[c] = minImage(xyz[3*i] - xyz[3*j],     box[0]);
+      dyy[c] = minImage(xyz[3*i+1] - xyz[3*j+1], box[1]);
+      dzz[c] = minImage(xyz[3*i+2] - xyz[3*j+2], box[2]);
+   }
+
+   for(int iter=0; iter<shake_iter_max; ++iter){   
+  
+      for(int c=0; c<cbond->N; ++c){
+         i = cbond->inda[c];
+         j = cbond->indb[c];
+         dxt[c] = minImage(xyz[3*i] - xyz[3*j],     box[0]);        
+         dyt[c] = minImage(xyz[3*i+1] - xyz[3*j+1], box[1]);
+         dzt[c] = minImage(xyz[3*i+2] - xyz[3*j+2], box[2]);
+      }
+
+      esig = 0.0;
+
+      for(int c=0; c<cbond->N; ++c){
+         dx = dxt[c];
+         dy = dyt[c];
+         dz = dzt[c];
+          
+         dis = cbond->val[c];
+         esig1 = fabs(dx*dx + dy*dy + dz*dz - dis*dis);
+
+         /* maximum error at this point */
+         esig = (esig > esig1) ? esig : esig1 ;
+      }
+
+      if (esig < shake_tol)
+         converged = true;
+
+      if(converged)
+         break;
+      else{
+ 
+         for(int c=0; c<cbond->N; ++c){        
+            i = cbond->inda[c];
+            j = cbond->indb[c];
+            dis = cbond->val[c];
+
+            omega = dis*dis;
+            amti  = 1.0/mass[i];
+            amtj  = 1.0/mass[j];
+
+            dx = minImage(xyz[3*i] - xyz[3*j],     box[0]);
+            dy = minImage(xyz[3*i+1] - xyz[3*j+1], box[1]);
+            dz = minImage(xyz[3*i+2] - xyz[3*j+2], box[2]);
+
+            gamma = (dx*dx + dy*dy + dz*dz - omega)/
+                    (2.0*(amti + amtj)*(dxx[c]*dx + dyy[c]*dy + dzz[c]*dz));
+
+            gammi = gamma*amti;
+            xyz[3*i]   = xyz[3*i]   - dxx[c]*gammi;
+            xyz[3*i+1] = xyz[3*i+1] - dyy[c]*gammi;
+            xyz[3*i+2] = xyz[3*i+2] - dzz[c]*gammi;
+
+            gammj = gamma*amtj;
+            xyz[3*i]   = xyz[3*i]   + dxx[c]*gammj;
+            xyz[3*i+1] = xyz[3*i+1] + dyy[c]*gammj;
+            xyz[3*i+2] = xyz[3*i+2] + dzz[c]*gammj;
+         } 
+      }
+
+      nsteps = iter + 1;
+   }
+
+   if(converged){
+      printf(" SHAKE converged in %d steps to accuracy %f \n",nsteps,esig);
+   }else{
+      printf(" SHAKE did not converged! Nsteps = %d accuracy = %f tolerance = %f \n",
+             nsteps,esig,shake_tol);
+      exit(EXIT_FAILURE);
+   } 
+
+   /* correct for the box */
+   inbox();
+
+   /* correct velocities */
+   for(int s=0; s<(3*natoms); ++s)
+      vel[s] += (xyz[s] - xyz_s[s])/dt;
+
 }
